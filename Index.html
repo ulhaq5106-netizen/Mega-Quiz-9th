@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Physics Quiz - AKU-EB</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js">
+    </script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            max-width: 700px;
+            width: 100%;
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+            transition: all 0.2s;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .flex-center {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        h1 {
+            font-size: 2rem;
+            color: #1a2b4c;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .subhead {
+            text-align: center;
+            color: #4a5b7a;
+            margin-bottom: 24px;
+            font-weight: 400;
+        }
+        .input-group {
+            margin-bottom: 18px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            color: #1a2b4c;
+            margin-bottom: 4px;
+            font-size: 0.95rem;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #dce3ed;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: 0.2s;
+            background: #fafcff;
+        }
+        .input-group input:focus {
+            border-color: #2a6df4;
+            outline: none;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(42, 109, 244, 0.15);
+        }
+        .btn-primary {
+            background: #2a6df4;
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            width: 100%;
+        }
+        .btn-primary:hover {
+            background: #1a56d0;
+            transform: scale(1.02);
+        }
+        .btn-secondary {
+            background: #eaf0f8;
+            color: #1a2b4c;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #d4dfed;
+        }
+        .btn-success {
+            background: #0f973d;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-success:hover {
+            background: #0b7a30;
+        }
+        .btn-danger {
+            background: #e04a4a;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-danger:hover {
+            background: #c03939;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .timer-box {
+            background: #1a2b4c;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        .timer-box span {
+            color: #ffd966;
+        }
+        .q-counter {
+            font-weight: 600;
+            color: #4a5b7a;
+        }
+        .question-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #0b1a33;
+            margin: 16px 0 24px 0;
+            line-height: 1.5;
+            min-height: 80px;
+        }
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .option-item {
+            background: #f7faff;
+            border: 2px solid #e2eaf4;
+            border-radius: 16px;
+            padding: 14px 18px;
+            cursor: pointer;
+            transition: 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            color: #1a2b4c;
+        }
+        .option-item:hover {
+            background: #eaf1fd;
+            border-color: #a0bce8;
+        }
+        .option-item.selected {
+            background: #dce8ff;
+            border-color: #2a6df4;
+            box-shadow: 0 0 0 3px rgba(42, 109, 244, 0.2);
+        }
+        .option-prefix {
+            background: #dce3ed;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: 700;
+            color: #1a2b4c;
+            flex-shrink: 0;
+        }
+        .option-item.selected .option-prefix {
+            background: #2a6df4;
+            color: white;
+        }
+        .nav-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            border-top: 1px solid #e2eaf4;
+            padding-top: 20px;
+        }
+        .result-box {
+            text-align: center;
+            padding: 12px 0;
+        }
+        .big-score {
+            font-size: 3.8rem;
+            font-weight: 800;
+            color: #1a2b4c;
+            background: #eaf1fd;
+            display: inline-block;
+            padding: 8px 40px;
+            border-radius: 60px;
+            margin: 12px 0;
+        }
+        .result-meta {
+            background: #f7faff;
+            padding: 14px;
+            border-radius: 16px;
+            margin: 20px 0;
+            color: #2a3f60;
+            font-weight: 500;
+        }
+        .leaderboard {
+            margin-top: 28px;
+            text-align: left;
+        }
+        .leaderboard h3 {
+            border-bottom: 2px solid #e2eaf4;
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+            color: #1a2b4c;
+        }
+        .leaderboard ul {
+            list-style: none;
+            padding: 0;
+        }
+        .leaderboard li {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: #f7faff;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            font-weight: 500;
+            border-left: 4px solid #2a6df4;
+        }
+        .restart-area {
+            margin-top: 30px;
+        }
+        @media (max-width: 500px) {
+            .container {
+                padding: 18px;
+            }
+            h1 {
+                font-size: 1.6rem;
+            }
+            .question-text {
+                font-size: 1.15rem;
+            }
+            .big-score {
+                font-size: 2.8rem;
+                padding: 4px 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="appContainer">
+        <div id="startScreen">
+            <h1>⚛️ Physics Quiz</h1>
+            <p class="subhead">AKU-EB Style · 100 MCQs</p>
+            <div class="input-group">
+                <label for="studentName">👤 Your Name</label>
+                <input type="text" id="studentName" placeholder="e.g. Ali Khan" value="Ali" />
+            </div>
+            <div class="input-group">
+                <label for="schoolName">🏫 School Name</label>
+                <input type="text" id="schoolName" placeholder="e.g. AKU-EB" value="AKU-EB School" />
+            </div>
+            <div class="input-group">
+                <label for="rollNumber">🔢 Roll Number</label>
+                <input type="text" id="rollNumber" placeholder="e.g. 2024-001" value="001" />
+            </div>
+            <button class="btn-primary" id="startQuizBtn">🚀 Start Quiz</button>
+        </div>
+        <div id="quizScreen" class="hidden">
+            <div class="quiz-header">
+                <span class="q-counter" id="questionCounter">1/100</span>
+                <div class="timer-box">⏳ <span id="timerDisplay">20</span>s</div>
+            </div>
+            <div id="questionGraphic"></div>
+            <div class="question-text" id="questionText">Loading question...</div>
+            <div class="options-grid" id="optionsContainer"></div>
+            <div class="nav-actions">
+                <button class="btn-secondary" id="prevBtn">◀ Previous</button>
+                <button class="btn-danger" id="submitQuizBtn">📤 Submit Quiz</button>
+                <button class="btn-secondary" id="nextBtn">Next ▶</button>
+            </div>
+        </div>
+        <div id="resultScreen" class="hidden">
+            <div class="result-box">
+                <h2>🏆 Your Score</h2>
+                <div class="big-score" id="finalScoreSpan">0/100</div>
+                <div class="result-meta" id="studentInfoDisplay">Student | School | Roll: N/A</div>
+                <div class="leaderboard">
+                    <h3>📊 Top 10 Leaderboard</h3>
+                    <ul id="leaderboardList">
+                        <li style="justify-content:center;color:#888;">Loading scores...</li>
+                    </ul>
+                </div>
+                <div class="restart-area">
+                    <button class="btn-primary" id="restartBtn">🔄 Play Again</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBhaAa78ZuwgnlI8W9fRVitqK56Z1pvfas",
+                authDomain: "mega-quiz-b669b.firebaseapp.com",
+                projectId: "mega-quiz-b669b",
+                storageBucket: "mega-quiz-b669b.firebasestorage.app",
+                messagingSenderId: "331371913216",
+                appId: "1:331371913216:web:e01d760ebcfe27e3c0b8e5",
+                measurementId: "G-KZKFQEGR7J"
+            };
+            let db = null;
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                console.log("✅ Firebase connected");
+            } catch (e) {
+                console.error("❌ Firebase init error:", e);
+                alert("Firebase connection failed. The quiz will work but scores won't be saved.");
+            }
+            const questionBank = [
+                { topic: "Measurement", question: "Differentiate between physical and non-physical quantities. Which is physical?", options: ["Length",
+                        "Happiness", "Beauty", "Idea"
+                    ], correct: 0 },
+                { topic: "Measurement", question: "Physics is based on:", options: ["Physical quantities only",
+                        "Emotions", "Abstract ideas", "Non-physical"
+                    ], correct: 0 },
+                { topic: "Measurement", question: "Which is a base quantity?", options: ["Force", "Velocity", "Mass",
+                        "Area"
+                    ], correct: 2 },
+                { topic: "Measurement", question: "Seven base quantities belong to:", options: ["CGS", "SI", "FPS",
+                        "Imperial"
+                    ], correct: 1 },
+                { topic: "Measurement", question: "Symbol for electric current:", options: ["I", "V", "A", "C"],
+                    correct: 0 },
+                { topic: "Measurement", question: "Derived unit is:", options: ["kilogram", "metre", "newton",
+                        "second"
+                    ], correct: 2 },
+                { topic: "Measurement", question: "Prefix 'kilo' means:", options: ["10²", "10³", "10⁶", "10⁻³"],
+                    correct: 1 },
+                { topic: "Measurement", question: "0.000005 in scientific notation:", options: ["5×10⁶", "5×10⁻⁶",
+                        "0.5×10⁻⁵", "50×10⁻⁷"
+                    ], correct: 1 },
+                { topic: "Measurement", question: "Scalar quantity:", options: ["Velocity", "Force", "Mass",
+                        "Displacement"
+                    ], correct: 2 },
+                { topic: "Measurement", question: "Vector addition head-to-tail rule applies to:", options: ["Scalars",
+                        "Vectors", "Numbers", "Units"
+                    ], correct: 1 },
+                { topic: "Measurement", question: "Least count of vernier callipers is usually:", options: ["0.1 mm",
+                        "0.01 mm", "1 mm", "0.001 mm"
+                    ], correct: 0 },
+                { topic: "Measurement", question: "Systematic error arises from:", options: ["Random fluctuation",
+                        "Instrument defect", "Human parallax always", "Environmental noise"
+                    ], correct: 1 },
+                { topic: "Measurement", question: "Precision refers to:", options: ["Closeness to true value",
+                        "Repeatability of measurements", "Least count", "Significant figures"
+                    ], correct: 1 },
+                { topic: "Measurement", question: "Number 0.00760 has significant figures:", options: ["2", "3", "4",
+                        "5"
+                    ], correct: 1 },
+                { topic: "Measurement", question: "Instrument to measure mass:", options: ["Spring balance",
+                        "Physical balance", "Stopwatch", "Vernier callipers"
+                    ], correct: 1 },
+                { topic: "Measurement", question: "Pythagoras theorem for vectors at right angle uses:", options: [
+                        "a+b", "√(a²+b²)", "a×b", "2ab"
+                    ], correct: 1 },
+                { topic: "Measurement", question: "Which is vector?", options: ["Time", "Acceleration", "Temperature",
+                        "Energy"
+                    ], correct: 1 },
+                { topic: "Measurement", question: "Screw gauge measures:", options: ["Length precisely", "Mass",
+                        "Time", "Volume"
+                    ], correct: 0 },
+                { topic: "Measurement", question: "Random error can be reduced by:", options: ["Calibration",
+                        "Taking average", "Using precise instrument", "Zero adjustment"
+                    ], correct: 1 },
+                { topic: "Measurement", question: "1 nanometre = ?", options: ["10⁻⁶ m", "10⁻⁹ m", "10⁻³ m",
+                        "10⁻¹² m"
+                    ], correct: 1 },
+                { topic: "Kinematics", question: "A body at rest has:", options: ["constant speed", "zero velocity",
+                        "acceleration", "displacement"
+                    ], correct: 1 },
+                { topic: "Kinematics", question: "Translatory motion example:", options: ["Spinning top",
+                        "Car on straight road", "Pendulum", "Fan"
+                    ], correct: 1 },
+                { topic: "Kinematics", question: "Displacement is:", options: ["Total path length",
+                        "Shortest distance", "Speed×time", "Scalar"
+                    ], correct: 1 },
+                { topic: "Kinematics", question: "Average speed =", options: ["total distance/total time",
+                        "displacement/time", "velocity/2", "acceleration×time"
+                    ], correct: 0 },
+                { topic: "Kinematics", question: "Uniform velocity means:", options: ["constant speed",
+                        "constant speed in straight line", "changing direction", "zero acceleration"
+                    ], correct: 1 },
+                { topic: "Kinematics", question: "Slope of distance-time graph gives:", options: ["Acceleration",
+                        "Speed", "Displacement", "Area"
+                    ], correct: 1 },
+                { topic: "Kinematics", question: "Area under speed-time graph gives:", options: ["Speed", "Distance",
+                        "Acceleration", "Time"
+                    ], correct: 1 },
+                { topic: "Kinematics", question: "Universal speed limit approx:", options: ["3×10⁸ m/s", "300 m/s",
+                        "3×10⁶ m/s", "9.8 m/s"
+                    ], correct: 0 },
+                { topic: "Kinematics", question: "Acceleration due to gravity (g) ≈", options: ["9.8 m/s²",
+                        "10 m/s²", "1.6 m/s²", "0"
+                    ], correct: 0 },
+                { topic: "Kinematics", question: "Free fall uses relation:", options: ["v=gt", "g = Δv/Δt",
+                        "s=ut+0.5at²", "all of these"
+                    ], correct: 3 },
+                { topic: "Kinematics", question: "Negative acceleration is also called:", options: ["deceleration",
+                        "uniform motion", "rest", "speed"
+                    ], correct: 0 },
+                { topic: "Kinematics", question: "Vibratory motion example:", options: ["Earth around sun",
+                        "Pendulum", "Car moving", "Drill bit"
+                    ], correct: 1 },
+                { topic: "Kinematics", question: "Instantaneous speed is speed at:", options: ["start",
+                        "particular instant", "end", "average"
+                    ], correct: 1 },
+                { topic: "Dynamics", question: "Mass resists change in state due to:", options: ["Weight", "Inertia",
+                        "Gravity", "Friction"
+                    ], correct: 1 },
+                { topic: "Dynamics", question: "Weight formula:", options: ["w=mg", "w=m/g", "w=g/m", "m=wg"],
+                    correct: 0 },
+                { topic: "Dynamics", question: "Contact force:", options: ["Gravity", "Magnetic", "Friction",
+                        "Electrostatic"
+                    ], correct: 2 },
+                { topic: "Dynamics", question: "Non-contact force:", options: ["Tension", "Air resistance",
+                        "Gravitational", "Push"
+                    ], correct: 2 },
+                { topic: "Dynamics", question: "SI unit of force:", options: ["kg", "newton", "joule", "pascal"],
+                    correct: 1 },
+                { topic: "Dynamics", question: "Fundamental forces strongest to weakest:", options: [
+                        "Strong, EM, Weak, Gravity", "Gravity, EM, Strong", "EM, Strong, Weak", "Weak, Gravity"
+                    ], correct: 0 },
+                { topic: "Dynamics", question: "Pakistani scientist who contributed to electroweak unification:",
+                    options: ["Abdul Qadeer Khan", "Abdus Salam", "Pervez Hoodbhoy", "Atta-ur-Rahman"],
+                    correct: 1 },
+                { topic: "Dynamics", question: "Free-body diagram represents:", options: ["Velocity",
+                        "Forces acting", "Mass", "Acceleration"
+                    ], correct: 1 },
+                { topic: "Dynamics", question: "Gravitational field strength unit:", options: ["N", "N/kg", "kg/N",
+                        "m/s"
+                    ], correct: 1 },
+                { topic: "Dynamics", question: "Thrust is a type of:", options: ["Contact force", "Non-contact",
+                        "Field force", "Weak force"
+                    ], correct: 0 }
+            ];
+            while (questionBank.length < 105) {
+                let base = questionBank[questionBank.length % questionBank.length];
+                questionBank.push({ ...base, question: base.question + " (variant)", options: [...base.options],
+                    correct: base.correct });
+            }
+            const questions = questionBank.slice(0, 100);
+            let currentIndex = 0;
+            let userAnswers = new Array(questions.length).fill(null);
+            let timer = null;
+            let timeLeft = 20;
+            let quizActive = false;
+            let studentName = "",
+                schoolName = "",
+                rollNumber = "";
+            const startScreen = document.getElementById('startScreen');
+            const quizScreen = document.getElementById('quizScreen');
+            const resultScreen = document.getElementById('resultScreen');
+            const startQuizBtn = document.getElementById('startQuizBtn');
+            const studentNameInput = document.getElementById('studentName');
+            const schoolNameInput = document.getElementById('schoolName');
+            const rollNumberInput = document.getElementById('rollNumber');
+            const questionText = document.getElementById('questionText');
+            const questionCounter = document.getElementById('questionCounter');
+            const optionsContainer = document.getElementById('optionsContainer');
+            const timerDisplay = document.getElementById('timerDisplay');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitQuizBtn');
+            const restartBtn = document.getElementById('restartBtn');
+            const finalScoreSpan = document.getElementById('finalScoreSpan');
+            const studentInfoDisplay = document.getElementById('studentInfoDisplay');
+            const leaderboardList = document.getElementById('leaderboardList');
+
+            function stopTimer() {
+                if (timer) clearInterval(timer);
+                timer = null;
+            }
+
+            function resetTimer() {
+                stopTimer();
+                if (!quizActive) return;
+                timeLeft = 20;
+                timerDisplay.textContent = timeLeft;
+                timer = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.textContent = timeLeft;
+                    if (timeLeft <= 0) {
+                        if (currentIndex < questions.length - 1) changeQuestion(1);
+                        else stopTimer();
+                    }
+                }, 1000);
+            }
+
+            function renderQuestion() {
+                const q = questions[currentIndex];
+                questionText.textContent = q.question;
+                questionCounter.textContent = `${currentIndex+1}/${questions.length}`;
+                let optsHtml = '';
+                q.options.forEach((opt, idx) => {
+                    const selectedClass = (userAnswers[currentIndex] === idx) ? 'selected' : '';
+                    optsHtml += `
+                        <div class="option-item ${selectedClass}" data-idx="${idx}">
+                            <span class="option-prefix">${String.fromCharCode(65+idx)}</span> ${opt}
+                        </div>`;
+                });
+                optionsContainer.innerHTML = optsHtml;
+                document.querySelectorAll('.option-item').forEach(el => {
+                    el.onclick = function() {
+                        userAnswers[currentIndex] = parseInt(this.dataset.idx);
+                        renderQuestion();
+                    };
+                });
+                prevBtn.disabled = (currentIndex === 0);
+            }
+
+            function changeQuestion(dir) {
+                stopTimer();
+                const newIndex = currentIndex + dir;
+                if (newIndex < 0 || newIndex >= questions.length) return;
+                currentIndex = newIndex;
+                resetTimer();
+                renderQuestion();
+            }
+
+            function startQuiz() {
+                studentName = studentNameInput.value.trim() || "Student";
+                schoolName = schoolNameInput.value.trim() || "AKU-EB School";
+                rollNumber = rollNumberInput.value.trim() || "N/A";
+                quizActive = true;
+                userAnswers.fill(null);
+                currentIndex = 0;
+                startScreen.classList.add('hidden');
+                quizScreen.classList.remove('hidden');
+                resultScreen.classList.add('hidden');
+                renderQuestion();
+                resetTimer();
+            }
+
+            function finishQuiz() {
+                if (!confirm('Submit your quiz? You cannot change answers after this.')) return;
+                stopTimer();
+                quizActive = false;
+                const score = userAnswers.reduce((acc, ans, i) =>
+                    (ans === questions[i].correct) ? acc + 1 : acc, 0
+                );
+                finalScoreSpan.textContent = `${score}/${questions.length}`;
+                studentInfoDisplay.textContent = `${studentName} | ${schoolName} | Roll: ${rollNumber}`;
+                quizScreen.classList.add('hidden');
+                resultScreen.classList.remove('hidden');
+                if (db) saveToFirebase(score);
+                else console.warn("Firestore not available, score not saved.");
+            }
+
+            function saveToFirebase(score) {
+                db.collection("physicsQuizResults").add({
+                    name: studentName,
+                    school: schoolName,
+                    roll: rollNumber,
+                    score: score,
+                    total: questions.length,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    fetchLeaderboard();
+                }).catch(e => console.error("Save error:", e));
+            }
+
+            function fetchLeaderboard() {
+                if (!db) {
+                    leaderboardList.innerHTML = '<li>Firebase not connected.</li>';
+                    return;
+                }
+                db.collection("physicsQuizResults")
+                    .orderBy("score", "desc")
+                    .limit(10)
+                    .get()
+                    .then(snap => {
+                        let html = '';
+                        if (snap.empty) {
+                            html = '<li style="justify-content:center;color:#888;">No scores yet. Be the first!</li>';
+                        } else {
+                            snap.forEach(doc => {
+                                const d = doc.data();
+                                html +=
+                                    `<li><span>${d.name || 'Anon'} (${d.school || 'N/A'})</span><span>${d.score}/${d.total || 100}</span></li>`;
+                            });
+                        }
+                        leaderboardList.innerHTML = html;
+                    })
+                    .catch(e => {
+                        console.error("Leaderboard fetch error:", e);
+                        leaderboardList.innerHTML = '<li>Error loading leaderboard.</li>';
+                    });
+            }
+
+            startQuizBtn.addEventListener('click', startQuiz);
+            prevBtn.addEventListener('click', () => changeQuestion(-1));
+            nextBtn.addEventListener('click', () => changeQuestion(1));
+            submitBtn.addEventListener('click', finishQuiz);
+            restartBtn.addEventListener('click', function() {
+                startScreen.classList.remove('hidden');
+                resultScreen.classList.add('hidden');
+                quizScreen.classList.add('hidden');
+                if (db) fetchLeaderboard();
+            });
+            startScreen.classList.remove('hidden');
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            if (db) fetchLeaderboard();
+            console.log("✅ Quiz app fully initialized.");
+        });
+    </script>
+</body>
+</html>
